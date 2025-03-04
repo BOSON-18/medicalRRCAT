@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/rrcat">
+
+       <Resource name="jdbc/mongoURI"
+                 auth="Container"
+                 type="java.lang.String"
+                 value="mongodb+srv://deeshankbatra663:Cleverfox18@cluster0.bkfjew1.mongodb.net/" />
+
+
+</Context>

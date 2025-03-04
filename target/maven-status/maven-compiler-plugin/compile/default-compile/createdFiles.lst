@@ -1,0 +1,5 @@
+com\medical\rrcat\resources\JakartaEE11Resource.class
+com\medical\rrcat\model\BeneficiaryModel.class
+com\medical\rrcat\model\ClaimModel.class
+com\medical\rrcat\model\EmployeeModel.class
+com\medical\rrcat\JakartaRestConfiguration.class

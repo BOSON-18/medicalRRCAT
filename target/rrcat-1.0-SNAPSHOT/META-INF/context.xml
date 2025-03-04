@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/rrcat">
+<!--    <Resource name="jdbc/PostgresDB" 
+              auth="Container"
+              type="javax.sql.DataSource" 
+              driverClassName="org.postgresql.Driver"
+              url="jdbc:postgresql://localhost:5432/your_database"
+              username="your_username"
+              password="your_password"
+              maxActive="50"
+              maxIdle="10"
+              maxWait="10000"/>-->
+    
+       <Resource name="mongodb/AtlasDB"
+              auth="Container"
+              type="com.mongodb.MongoClient"
+              factory="com.mongodb.MongoClientFactory"
+              singleton="true"
+              uri="mongodb+srv://deeshankbatra663:Cleverfox18@cluster0.bkfjew1.mongodb.net/"/>
+
+
+</Context>
