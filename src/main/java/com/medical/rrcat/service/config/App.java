@@ -1,4 +1,4 @@
-package com.medical.rrcat.service;
+package com.medical.rrcat.service.config;
 
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -6,9 +6,12 @@ import com.mongodb.DBCollection;
 public class App {
     public static void main(String[] args) {
         try {
+            PostgresDBUtil pg = new PostgresDBUtil();
+            pg.connect();
             // ✅ Get MongoDB Database
             DB database = MongoDBUtil.getDatabase();
             // same for Postgres -> add jar in lib and first connect to admin
+
 
             // ✅ Get a Collection
             DBCollection collection = database.getCollection("medical");
@@ -16,7 +19,7 @@ public class App {
             // ✅ Print success message
             System.out.println("✅ Connected to MongoDB! Collection: " + collection.getName());
 
-            MongoDBUtil.getAllMedicalRecords();
+//            MongoDBUtil.getAllMedicalRecords();
             // ✅ Close the connection when done
             MongoDBUtil.closeConnection();
         } catch (Exception e) {

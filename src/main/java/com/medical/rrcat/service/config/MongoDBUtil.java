@@ -1,4 +1,4 @@
-package com.medical.rrcat.service;
+package com.medical.rrcat.service.config;
 
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoClient;
@@ -11,12 +11,12 @@ public class MongoDBUtil {
     private static MongoClient mongoClient;
     private static DB database;
 
-    // Initialize connection in a static block
+
     static {
         try {
             // ✅ Replace with your actual MongoDB Cloud URI
-            String mongoURI = "mongodb+srv://deeshankbatra663:Cleverfox18@cluster0.bkfjew1.mongodb.net/";
-
+             Database db=new Database();
+            String mongoURI = db.getMongoURI();
             // ✅ Create a MongoDB Client using the URI
             MongoClientURI uri = new MongoClientURI(mongoURI);
             mongoClient = new MongoClient(uri);

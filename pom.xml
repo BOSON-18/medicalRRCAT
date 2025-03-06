@@ -25,6 +25,13 @@
             <artifactId>mongo-java-driver</artifactId>
             <version>3.12.14</version> <!-- Last version supporting Java 6 -->
         </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.29</version>
+        </dependency>
+
     </dependencies>
     
     <build>
