@@ -28,7 +28,7 @@ public class ClaimModel {
     private char chss_char;
     private String bene_rela;
     private String curr_stat;
-    private BigInteger file_id;
+    private String file_id;
     private String insert_ip;
     private int insert_ccno;
     private String insert_userid;
@@ -39,7 +39,7 @@ public class ClaimModel {
     public ClaimModel() {
     }
 
-    public ClaimModel(String emp_title, int pk_claim, int amt_claimed, int amt_approved, DoctorModel[] doctors, String emp_name, String emp_desg, String emp_divn, String emp_secn, String emp_lab, String emp_group, int emp_ccno, String bene_name, char chss_char, String bene_rela, String curr_stat, BigInteger file_id, String insert_ip, int insert_ccno, String insert_userid, PrescriptionModel[] prescriptions, BillModel[] bills, StageModel[] stages) {
+    public ClaimModel(String emp_title, int pk_claim, int amt_claimed, int amt_approved, DoctorModel[] doctors, String emp_name, String emp_desg, String emp_divn, String emp_secn, String emp_lab, String emp_group, int emp_ccno, String bene_name, char chss_char, String bene_rela, String curr_stat, String file_id, String insert_ip, int insert_ccno, String insert_userid, PrescriptionModel[] prescriptions, BillModel[] bills, StageModel[] stages) {
         this.emp_title = emp_title;
         this.pk_claim = pk_claim;
         this.amt_claimed = amt_claimed;
@@ -193,11 +193,11 @@ public class ClaimModel {
         this.curr_stat = curr_stat;
     }
 
-    public BigInteger getFile_id() {
+    public String getFile_id() {
         return file_id;
     }
 
-    public void setFile_id(BigInteger file_id) {
+    public void setFile_id(String file_id) {
         this.file_id = file_id;
     }
 
