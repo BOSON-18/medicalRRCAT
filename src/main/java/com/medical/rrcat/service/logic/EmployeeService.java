@@ -255,4 +255,47 @@ con.close();
         return true;
     }
 
+
+
+    public Boolean editForm(int pkClaim,String emp_name, String designation, String division, int ccno, BeneficiaryModel beneficiary, BillModel[] bills, PrescriptionModel[] prescriptions, int amt_claimed, String userId, String ip_address, int doctor_ccno, String filePath, String fileName){
+
+        // Form edit kb hoga? -> When either in pending or review stage
+        List<ClaimModel> claims= employee.getE_claims();
+      ClaimModel claim=null;
+        for(ClaimModel it:claims){
+            if(it.getPk_claim()==pkClaim){
+                claim=it;
+            }
+        }
+        if(claim==null){
+            System.out.println("Claim Not Found");
+            return false;
+        }
+
+        StageModel[] stages= claim.getStages();
+        int size=stages.length;
+        StageModel stage=stages[size-1];
+        int op_code=stage.getOper_code();
+
+        if(op_code!=1 || op_code!=2){
+            System.out.println("Cannot edit form not in pending or review stage");
+            return false;
+        }
+
+        // ab koi dikkat nhi ab sb kuch kr skte edit krdo form ko
+
+        try{
+
+        }catch(Exception e){
+            System.out.println("edit form error->"+e);
+            return false;
+        }
+
+
+
+
+
+        return true;
+    }
+
 }

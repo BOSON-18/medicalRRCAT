@@ -29,6 +29,7 @@ public class ClaimModel {
     private String bene_rela;
     private String curr_stat;
     private String file_id;
+    private String file_hash;
     private String insert_ip;
     private int insert_ccno;
     private String insert_userid;
@@ -63,6 +64,14 @@ public class ClaimModel {
         this.prescriptions = prescriptions;
         this.bills = bills;
         this.stages = stages;
+    }
+
+    public String getFile_hash() {
+        return file_hash;
+    }
+
+    public void setFile_hash(String file_hash) {
+        this.file_hash = file_hash;
     }
 
     public int getAmt_claimed() {
