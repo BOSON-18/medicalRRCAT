@@ -6,16 +6,20 @@ import com.mongodb.DB;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MongoDBUtil {
     private static MongoClient mongoClient;
@@ -46,31 +50,36 @@ public class MongoDBUtil {
         return database;
     }
 
-
-    public ObjectId uploadPdfFile(String filePath, String fileName) {
-
+    public ObjectId uploadPdfFile(byte[] fileBytes, String fileName) {
         try {
+            // Create a temporary file
+            File tempFile = File.createTempFile("temp", ".pdf");
+            tempFile.deleteOnExit(); // Ensure the file is deleted after use
 
-            File pdfFile = new File(filePath);
-            InputStream inputStream = new FileInputStream(pdfFile);
+            // Write the byte array to the temporary file
+            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+            fileOutputStream.write(fileBytes);
+            fileOutputStream.close();
+
+            // Now use the temporary file for GridFS upload
+            InputStream inputStream = new FileInputStream(tempFile);
             GridFSInputFile gridFsFile = gridFSBucket.createFile(inputStream);
             gridFsFile.setFilename(fileName);
-            gridFsFile.setContentType("application.pdf");
+            gridFsFile.setContentType("application/pdf"); // Corrected content type
 
-            // setting chunk size to max 75 Mb
+            // Setting chunk size to max 75 Mb
             gridFsFile.setChunkSize(75 * 1024 * 1024);
-            // Bhot Saare chunks banenge inke ab if file size exceeds 75 Mb
             gridFsFile.save();
 
             return (ObjectId) gridFsFile.getId();
-
 
         } catch (Exception e) {
             System.out.println("File Upload Exception->" + e);
             return null;
         }
-
     }
+
+
 
     public GridFSDBFile getFileById(ObjectId fileId) {
         return gridFSBucket.findOne(fileId);

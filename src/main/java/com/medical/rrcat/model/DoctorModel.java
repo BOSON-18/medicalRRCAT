@@ -15,12 +15,32 @@ public class DoctorModel {
     private boolean isIncharge;
     private boolean isRmc;
 
+    private ClaimModel[] pendingClaims;
+    private ClaimModel[] reviewedClaims;
+
+
     public int getDr_ccno() {
         return dr_ccno;
     }
 
     public String getDr_code() {
         return dr_code;
+    }
+
+    public ClaimModel[] getReviewedClaims() {
+        return reviewedClaims;
+    }
+
+    public void setReviewedClaims(ClaimModel[] reviewedClaims) {
+        this.reviewedClaims = reviewedClaims;
+    }
+
+    public ClaimModel[] getPendingClaims() {
+        return pendingClaims;
+    }
+
+    public void setPendingClaims(ClaimModel[] pendingClaims) {
+        this.pendingClaims = pendingClaims;
     }
 
     public int getDr_order() {

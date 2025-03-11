@@ -5,9 +5,11 @@ import com.medical.rrcat.model.*;
 import com.medical.rrcat.service.config.MongoDBUtil;
 import com.medical.rrcat.service.config.PostgresDBUtil;
 import com.medical.rrcat.service.config.Query;
-import jakarta.mail.Multipart;
 import jakarta.servlet.http.Part;
 
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -112,9 +114,38 @@ public class EmployeeService {
         return employee;
     }
 
+    public String calculateHashCode(byte[] fileBytes) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = md.digest(fileBytes);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    public Boolean submitForm(String emp_name, String designation, String division, int ccno, BeneficiaryModel beneficiary, BillModel[] bills, PrescriptionModel[] prescriptions, int amt_claimed, String userId, String ip_address, int doctor_ccno, String filePath, String fileName) throws Exception {
+    public byte[] getBitStream(Part filePart) {
+        byte[] fileBytes;
+        try {
+            InputStream fileInputStream = filePart.getInputStream();
+            fileBytes = fileInputStream.readAllBytes();
+            fileInputStream.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return fileBytes;
 
+    }
+
+
+    public Boolean submitForm(BeneficiaryModel beneficiary, BillModel[] bills, PrescriptionModel[] prescriptions, int amt_claimed, String userId, String ip_address, int doctor_ccno, Part filePart,
+                              String fileName) throws Exception {
         ClaimModel claim = null;
         String operation_name = null;
 
@@ -143,7 +174,7 @@ public class EmployeeService {
 
             try {
                 PreparedStatement operation = con.prepareStatement(q.getOperationQuery());
-                operation.setInt(1, 1);
+                operation.setInt(1, 2);
                 ResultSet operationResult = operation.executeQuery();
                 while (operationResult.next()) {
                     statement.setString(15, operationResult.getString("oper_name"));
@@ -162,9 +193,19 @@ public class EmployeeService {
             MongoDBUtil mongo = null;
             try {
                 mongo = new MongoDBUtil();
-                String fileId = mongo.uploadPdfFile(filePath, fileName).toHexString();
+
+                InputStream fileInputStream = filePart.getInputStream();
+                byte[] fileBytes = fileInputStream.readAllBytes();
+                fileInputStream.close();
+                String fileId = mongo.uploadPdfFile(fileBytes, fileName).toHexString();
+//                String fileId = mongo.uploadPdfFile(filePath, fileName).toHexString();
                 System.out.println("File uploaded successfully with ID: " + fileId);
                 statement.setString(17, fileId);
+
+                String fileHash = calculateHashCode(fileBytes);
+                System.out.println("File Hash Code -> " + fileHash);
+                statement.setString(18, fileHash);
+
             } catch (Exception mongoError) {
                 // Use a logging framework for better logging
                 System.err.println("Mongo Error-> " + mongoError);
@@ -223,11 +264,12 @@ public class EmployeeService {
                         PreparedStatement stageStatement = con.prepareStatement(q.getSetStageQuery());
                         stageStatement.setInt(1, pkClaim);
                         stageStatement.setInt(2, doctor_ccno);
-                        if (operation_name != null) stageStatement.setString(3, operation_name);
+                        stageStatement.setInt(3, 2);
+                        if (operation_name != null) stageStatement.setString(4, operation_name);
                         else System.out.println("OperationName Null");
-                        stageStatement.setDate(4, (Date) java.util.Date.from(Instant.now()));
-                        stageStatement.setInt(5, employee.getE_ccno());
-                        stageStatement.setString(6, userId);
+                        stageStatement.setDate(5, (Date) Date.from(Instant.now()));
+                        stageStatement.setInt(6, employee.getE_ccno());
+                        stageStatement.setString(7, userId);
 
                         int changes = stageStatement.executeUpdate();
                         stageStatement.close();
@@ -244,7 +286,7 @@ public class EmployeeService {
                     return false;
                 }
             }
-con.close();
+            con.close();
 
         } catch (Exception e) {
             System.out.println(e);
@@ -256,46 +298,173 @@ con.close();
     }
 
 
-
-    public Boolean editForm(int pkClaim,String emp_name, String designation, String division, int ccno, BeneficiaryModel beneficiary, BillModel[] bills, PrescriptionModel[] prescriptions, int amt_claimed, String userId, String ip_address, int doctor_ccno, String filePath, String fileName){
+    public Boolean editForm(int pkClaim, BeneficiaryModel beneficiary, BillModel[] bills, PrescriptionModel[] prescriptions, int amt_claimed, String userId, String ip_address, int doctor_ccno, Part filePart,
+                            String fileName) {
 
         // Form edit kb hoga? -> When either in pending or review stage
-        List<ClaimModel> claims= employee.getE_claims();
-      ClaimModel claim=null;
-        for(ClaimModel it:claims){
-            if(it.getPk_claim()==pkClaim){
-                claim=it;
+        List<ClaimModel> claims = employee.getE_claims();
+        ClaimModel claim = null;
+        for (ClaimModel it : claims) {
+            if (it.getPk_claim() == pkClaim) {
+                claim = it;
             }
         }
-        if(claim==null){
+        if (claim == null) {
             System.out.println("Claim Not Found");
             return false;
         }
 
-        StageModel[] stages= claim.getStages();
-        int size=stages.length;
-        StageModel stage=stages[size-1];
-        int op_code=stage.getOper_code();
+        StageModel[] stages = claim.getStages();
+        int size = stages.length;
+        StageModel stage = stages[size - 1];
+        int op_code = stage.getOper_code();
 
-        if(op_code!=1 || op_code!=2){
-            System.out.println("Cannot edit form not in pending or review stage");
+        if (op_code != 1 || op_code != 2 || op_code != 3) {
+            //new || pending || review me se ek nhi hai
+            System.out.println("Cannot edit form not in pending or review or save stage");
             return false;
         }
+        String operation_name = null;
 
         // ab koi dikkat nhi ab sb kuch kr skte edit krdo form ko
 
-        try{
+        try {
+            PostgresDBUtil pg = new PostgresDBUtil();
+            Connection con = pg.connect();
 
-        }catch(Exception e){
-            System.out.println("edit form error->"+e);
-            return false;
+            PreparedStatement statement = con.prepareStatement(q.getEditClaimQuery());
+            statement.setString(1, beneficiary.getBene_name());
+            statement.setString(2, Character.toString(beneficiary.getChss_char()));
+            statement.setInt(3, beneficiary.getRela_code());
+            statement.setInt(4, amt_claimed);
+            statement.setDate(5, (Date) Date.from(Instant.now()));
+            statement.setString(6, ip_address);
+            statement.setInt(7, doctor_ccno);
+            statement.setInt(10, pkClaim);
+
+            MongoDBUtil mongo = null;
+            try {
+                byte[] fileBytes = getBitStream(filePart);
+                String fileHash = calculateHashCode(fileBytes);
+
+                if (claim.getFile_hash() != fileHash) {
+                    mongo = new MongoDBUtil();
+
+                    String fileId = mongo.uploadPdfFile(fileBytes, fileName).toHexString();
+                    System.out.println("File uploaded successfully with ID: " + fileId);
+                    statement.setString(8, fileId);
+
+                    System.out.println("File Hash : " + fileHash);
+                    statement.setString(9, fileHash);
+
+                }
+            } catch (Exception mongoError) {
+                // Use a logging framework for better logging
+                System.err.println("Mongo Error-> " + mongoError);
+                mongoError.printStackTrace();
+                return false;
+            } finally {
+                if (mongo != null) {
+
+                    mongo.closeConnection();
+                }
+            }
+
+            PreparedStatement billStatement = con.prepareStatement(q.getUpdateBill());
+            for (int i = 0; i < bills.length; i++) {
+                BillModel bill = bills[i];
+                billStatement.setInt(4, pkClaim);
+                billStatement.setDate(1, (Date) bill.getBill_date());
+                billStatement.setString(2, bill.getStore_name());
+                billStatement.setDate(3, (Date) Date.from(Instant.now()));
+                int changes = billStatement.executeUpdate();
+                if (changes == 0) {
+                    System.out.println("Bill Serial No " + i + " failed to update");
+                    return false;
+                }
+            }
+            billStatement.close();
+
+            PreparedStatement prescriptionStatement = con.prepareStatement(q.getUpdatePrescription());
+            for (int i = 0; i < prescriptions.length; i++) {
+                PrescriptionModel prescription = prescriptions[i];
+                prescriptionStatement.setInt(4, pkClaim);
+                prescriptionStatement.setDate(1, (Date) prescription.getPres_date());
+                prescriptionStatement.setString(2, prescription.getPres_dr());
+                prescriptionStatement.setInt(3, prescription.getDr_ccno());
+
+                int changes = prescriptionStatement.executeUpdate();
+                if (changes == 0) {
+                    System.out.println("Prescription Serial No " + i + " failed to update");
+                    return false;
+                }
+            }
+            prescriptionStatement.close();
+
+            try {
+                PreparedStatement operation = con.prepareStatement(q.getOperationQuery());
+                operation.setInt(1, 2);
+                ResultSet operationResult = operation.executeQuery();
+                while (operationResult.next()) {
+                    operation_name = operationResult.getString("oper_name");
+                }
+                operationResult.close();
+                operation.close();
+            } catch (Exception e) {
+                System.out.println(e);
+                return false;
+            }
+
+            // stage ka if else ke thorugh update kro
+            PreparedStatement stageStatement = null;
+            if (op_code == 1 || op_code == 2) {
+                //save || pending
+                stageStatement = con.prepareStatement(q.getUpdateStageQuery());
+
+                stageStatement.setInt(1, doctor_ccno);
+                stageStatement.setInt(2, 2);
+                stageStatement.setString(3, operation_name);
+                stageStatement.setDate(4, (Date) Date.from(Instant.now()));
+                stageStatement.setInt(5, pkClaim);
+
+            } else {
+                //review me hai
+                stageStatement = con.prepareStatement(q.getSetStageQuery());
+
+                stageStatement.setInt(1, pkClaim);
+                stageStatement.setInt(2, doctor_ccno);
+                stageStatement.setInt(3, 2);
+                if (operation_name != null) stageStatement.setString(4, operation_name);
+                else System.out.println("OperationName Null");
+                stageStatement.setDate(5, (Date) Date.from(Instant.now()));
+                stageStatement.setInt(6, employee.getE_ccno());
+                stageStatement.setString(7, userId);
+
+
+            }
+            int changes = stageStatement.executeUpdate();
+            stageStatement.close();
+            if (changes == 0) {
+                System.out.println("Stage insertion Failed");
+                return false;
+            }
+
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                System.out.println("Edit Form Failed");
+                return false;
+            }
+
+            statement.close();
+            con.close();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-
-
 
 
         return true;
     }
 
 }
+

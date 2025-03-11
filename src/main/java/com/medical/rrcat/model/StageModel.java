@@ -7,6 +7,7 @@ public class StageModel {
     private int pk_claim;
     private int dr_ccno;
     private int oper_code;
+    private String oper_name;
     private Date insert_date;
     private int inert_by_ccno;
     private String insert_by_userid;
@@ -18,6 +19,14 @@ public class StageModel {
         this.insert_date = insert_date;
         this.inert_by_ccno = inert_by_ccno;
         this.insert_by_userid = insert_by_userid;
+    }
+
+    public String getOper_name() {
+        return oper_name;
+    }
+
+    public void setOper_name(String oper_name) {
+        this.oper_name = oper_name;
     }
 
     public int getPk_claim() {
