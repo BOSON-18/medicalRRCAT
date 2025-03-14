@@ -1,43 +1,28 @@
 package com.medical.rrcat.service.config;
 
-import com.mongodb.MongoClientURI;
 import com.mongodb.MongoClient;
-import com.mongodb.DB;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.MongoClientURI;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
-import org.bson.Document;
 import org.bson.types.ObjectId;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class MongoDBUtil {
     private static MongoClient mongoClient;
-    private static DB database;
-    private static GridFS gridFSBucket;
-
+    private static GridFS gridFS;
 
     static {
         try {
-            // ✅ Replace with your actual MongoDB Cloud URI
             Database db = new Database();
-            String mongoURI = db.getMongoURI();
-            // ✅ Create a MongoDB Client using the URI
-            MongoClientURI uri = new MongoClientURI(mongoURI);
+            MongoClientURI uri = new MongoClientURI(db.getMongoURI());
             mongoClient = new MongoClient(uri);
-            database = mongoClient.getDB("rrcat");
-            gridFSBucket = new GridFS(database);
 
+            // Use legacy GridFS constructor
+            gridFS = new GridFS(mongoClient.getDB("rrcat"), "pdfs");
             System.out.println("✅ MongoDB Connected Successfully!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -45,65 +30,63 @@ public class MongoDBUtil {
         }
     }
 
-    // ✅ Method to get the database instance
-    public static DB getDatabase() {
-        return database;
-    }
-
     public ObjectId uploadPdfFile(byte[] fileBytes, String fileName) {
+        InputStream inputStream = null;
         try {
-            // Create a temporary file
-            File tempFile = File.createTempFile("temp", ".pdf");
-            tempFile.deleteOnExit(); // Ensure the file is deleted after use
+            inputStream = new ByteArrayInputStream(fileBytes);
 
-            // Write the byte array to the temporary file
-            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-            fileOutputStream.write(fileBytes);
-            fileOutputStream.close();
-
-            // Now use the temporary file for GridFS upload
-            InputStream inputStream = new FileInputStream(tempFile);
-            GridFSInputFile gridFsFile = gridFSBucket.createFile(inputStream);
+            GridFSInputFile gridFsFile = gridFS.createFile(inputStream);
             gridFsFile.setFilename(fileName);
-            gridFsFile.setContentType("application/pdf"); // Corrected content type
-
-            // Setting chunk size to max 75 Mb
+            gridFsFile.setContentType("application/pdf");
             gridFsFile.setChunkSize(75 * 1024 * 1024);
             gridFsFile.save();
 
             return (ObjectId) gridFsFile.getId();
-
-        } catch (Exception e) {
-            System.out.println("File Upload Exception->" + e);
-            return null;
+        } finally {
+            closeQuietly(inputStream);
         }
     }
 
-
-
-    public GridFSDBFile getFileById(ObjectId fileId) {
-        return gridFSBucket.findOne(fileId);
-    }
-
-    public void downloadPdfFile(ObjectId fileId, String downloadPath) {
+    public byte[] downloadPdfContent(String hexObjectId) {
+        ByteArrayOutputStream baos = null;
         try {
+            ObjectId fileId = new ObjectId(hexObjectId);
+            GridFSDBFile gridFSFile = gridFS.findOne(fileId);
 
-            GridFSDBFile gridFSDBFile = gridFSBucket.findOne(fileId);
-
-            if (gridFSDBFile != null) {
-                FileOutputStream outputStream = new FileOutputStream(downloadPath);
-                gridFSDBFile.writeTo(outputStream);
-                outputStream.close();
-                System.out.println("File downloaded successfully to " + downloadPath);
+            if (gridFSFile != null) {
+                baos = new ByteArrayOutputStream();
+                gridFSFile.writeTo(baos);
+                return baos.toByteArray();
             }
-
+            return null;
         } catch (Exception e) {
-            System.out.println("Download PDF Error->" + e);
-
+            System.err.println("Download error: " + e.getMessage());
+            return null;
+        } finally {
+            closeQuietly(baos);
         }
     }
 
-    // ✅ Method to close the connection (Call this when done)
+    private static void closeQuietly(InputStream is) {
+        if (is != null) {
+            try {
+                is.close();
+            } catch (IOException e) {
+                System.err.println("Error closing stream: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void closeQuietly(ByteArrayOutputStream os) {
+        if (os != null) {
+            try {
+                os.close();
+            } catch (IOException e) {
+                System.err.println("Error closing stream: " + e.getMessage());
+            }
+        }
+    }
+
     public static void closeConnection() {
         if (mongoClient != null) {
             mongoClient.close();

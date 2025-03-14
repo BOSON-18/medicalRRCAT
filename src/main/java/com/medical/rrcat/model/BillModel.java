@@ -16,6 +16,9 @@ public class BillModel {
         this.insert_date = insert_date;
     }
 
+    public BillModel() {
+    }
+
     public int getPk_claim() {
         return pk_claim;
     }

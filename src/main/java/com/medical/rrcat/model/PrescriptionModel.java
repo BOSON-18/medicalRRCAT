@@ -3,6 +3,8 @@ package com.medical.rrcat.model;
 import java.util.Date;
 
 public class PrescriptionModel {
+    public PrescriptionModel() {
+    }
 
     private int pk_claim;
     private Date pres_date;

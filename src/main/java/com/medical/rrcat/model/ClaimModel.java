@@ -5,6 +5,8 @@
 package com.medical.rrcat.model;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -28,6 +30,7 @@ public class ClaimModel {
     private char chss_char;
     private String bene_rela;
     private String curr_stat;
+    private int curr_op;
     private String file_id;
     private String file_hash;
     private String insert_ip;
@@ -72,6 +75,10 @@ public class ClaimModel {
 
     public void setFile_hash(String file_hash) {
         this.file_hash = file_hash;
+    }
+
+    public void setCurr_op(int curr_op) {
+        this.curr_op = curr_op;
     }
 
     public int getAmt_claimed() {

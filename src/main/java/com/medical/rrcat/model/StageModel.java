@@ -9,15 +9,15 @@ public class StageModel {
     private int oper_code;
     private String oper_name;
     private Date insert_date;
-    private int inert_by_ccno;
+    private int insert_by_ccno;
     private String insert_by_userid;
 
-    public StageModel(int pk_claim, int dr_ccno, int oper_code, Date insert_date, int inert_by_ccno, String insert_by_userid) {
+    public StageModel(int pk_claim, int dr_ccno, int oper_code, Date insert_date, int insert_by_ccno, String insert_by_userid) {
         this.pk_claim = pk_claim;
         this.dr_ccno = dr_ccno;
         this.oper_code = oper_code;
         this.insert_date = insert_date;
-        this.inert_by_ccno = inert_by_ccno;
+        this.insert_by_ccno = insert_by_ccno;
         this.insert_by_userid = insert_by_userid;
     }
 
@@ -62,11 +62,11 @@ public class StageModel {
     }
 
     public int getInert_by_ccno() {
-        return inert_by_ccno;
+        return insert_by_ccno;
     }
 
-    public void setInert_by_ccno(int inert_by_ccno) {
-        this.inert_by_ccno = inert_by_ccno;
+    public void setInert_by_ccno(int insert_by_ccno) {
+        this.insert_by_ccno = insert_by_ccno;
     }
 
     public String getInsert_by_userid() {
