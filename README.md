@@ -12,3 +12,6 @@ http://10.10.18.178:8080/examples/mongo-java-driver-3.12.14.jar
 
 ->Infosys
 https://explore.onwingspan.com/web/en/page/home
+
+
+https://docs.google.com/spreadsheets/d/1LO1BLTebhrcRfEpPjIOutKvOFSFaFM3Ph1EjA12x_zE/edit?pli=1&gid=1950047548#gid=1950047548
